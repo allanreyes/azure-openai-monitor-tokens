@@ -21,7 +21,7 @@ $maxTokens = [string]::IsNullOrEmpty($maxTokens) ? "1000000" : $maxTokens
 
 Write-Host "Look back how many days? (Default: 30)" -ForegroundColor Yellow
 $daysAgo = Read-Host
-$daysAgo = [string]::IsNullOrEmpty($maxTokens) ? "30" : $daysAgo
+$daysAgo = [string]::IsNullOrEmpty($daysAgo) ? "30" : $daysAgo
 
 $loggedInUser = az account show --query user.name -o tsv
 Write-Host "What email address should the notification come from? (Default: $($loggedInUser))" -ForegroundColor Yellow
