@@ -6,7 +6,7 @@ if ($Timer.IsPastDue) {
     Write-Host "PowerShell timer is running late!"
 }
 
-$subs = Get-AzSubscription | Where-Object { $_.Name.Contains("allan") } #Temp filter to speed up testing
+$subs = Get-AzSubscription
 
 $anomaly = [System.Collections.ArrayList]@()
 
