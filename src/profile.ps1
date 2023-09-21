@@ -20,3 +20,6 @@ if ($env:MSI_SECRET) {
 # Enable-AzureRmAlias
 
 # You can also define functions or aliases that can be referenced in any of your PowerShell functions.
+foreach($file in Get-ChildItem -Path "$PSScriptRoot\_Modules" -Filter *.psm1){
+    Import-Module $file.fullname
+}
