@@ -2,10 +2,8 @@ targetScope = 'subscription'
 
 param suffix string
 param location string = deployment().location
-param daysAgo string
-param maxTokens string
+param maxDailyCost string
 param emailFrom string
-param emailTo string
 
 var resourceGroupName = 'rg-${suffix}'
 var appName = 'fn-${suffix}-${uniqueString(rg.id)}'
@@ -43,10 +41,9 @@ module functionApp './modules/functionApp.bicep' = {
     location: location
     saConnectionString: storageAccount.outputs.saConnectionString
     aiConnectionString: appInsights.outputs.aiConnectionString
-    emailTo: emailTo
-    sendEmailUrl: logicApp.outputs.logicAppUrl
-    daysAgo: daysAgo
-    maxTokens: maxTokens
+    maxDailyCost: maxDailyCost
+    serviceBusAccessPolicyKey: serviceBus.outputs.serviceBusAccessPolicyKey
+    serviceBusNamespace: 'sb-${suffix}-${uniqueString(rg.id)}'
   }
 }
 
@@ -57,6 +54,16 @@ module logicApp './modules/logicApp.bicep' = {
     location: location
     emailFrom: emailFrom
     logicAppName: logicAppName
+  }
+}
+
+module serviceBus 'modules/serviceBus.bicep' = {
+  name: 'sb-${suffix}'
+  scope: rg
+  params: {
+    location: location
+    serviceBusNamespace: 'sb-${suffix}-${uniqueString(rg.id)}'
+    queueName: 'alerts'
   }
 }
 

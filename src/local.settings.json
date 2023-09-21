@@ -4,7 +4,8 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME_VERSION": "7.2",
     "FUNCTIONS_WORKER_RUNTIME": "powershell",
-    "MaxDailyCost": "0.50",
-    "LogicAppUrl": ""
+    "MaxDailyCost": "1.00",
+    "ServiceBusNamespace": "",
+    "ServiceBusAccessPolicyKey": ""
   }
 }

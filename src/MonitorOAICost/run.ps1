@@ -29,20 +29,10 @@ foreach ($resource in $resources) {
     $log = "$name >>> $($line.TotalCost)"
     if ($line.TotalCost -gt $threshold ) {
         Write-Warning "$log <<< Exceeds max cost of $threshold"
+        Send-ServiceBusMessage -ResourceId $resource
     } else {
-        Write-Host $log -ForegroundColor Green
+        Write-Host $log
     }
 }
-
-
-#     $payload = @{
-#         Subject = "Azure OpenAI services exceeding maxTokens of $($env:MaxTokens) within $($env:DaysAgo) days, as of $((Get-Date).ToUniversalTime()) UTC"
-#         To      = $env:EmailTo
-#         body    = $template
-#     }
-
-#     Write-Host "Sending email to $($env:EmailTo) with $($anomaly.Count) anomalies"
-#     Invoke-RestMethod $env:SendEmailUrl -Method Post -Body ($payload | ConvertTo-Json ) -ContentType "application/json"
-# }
 
 Write-Host "PowerShell timer trigger function completed: $((Get-Date).ToUniversalTime())"

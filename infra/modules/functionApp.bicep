@@ -2,10 +2,9 @@ param appName string
 param location string = resourceGroup().location
 param saConnectionString string
 param aiConnectionString string
-param maxTokens string
-param daysAgo string
-param emailTo string
-param sendEmailUrl string
+param maxDailyCost string
+param serviceBusNamespace string
+param serviceBusAccessPolicyKey string
 
 resource hostingPlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${appName}-asp'
@@ -56,20 +55,16 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
         value: aiConnectionString
       }
       {
-        name: 'MaxTokens'
-        value: maxTokens
+        name: 'MaxDailyCost'
+        value: maxDailyCost
       }
       {
-        name: 'DaysAgo'
-        value: daysAgo
+        name: 'ServiceBusNamespace'
+        value: serviceBusNamespace
       }
       {
-        name: 'SendEmailUrl'
-        value: sendEmailUrl
-      }
-      {
-        name: 'EmailTo'
-        value: emailTo
+        name: 'ServiceBusAccessPolicyKey'
+        value: serviceBusAccessPolicyKey
       }
     ]
     ftpsState: 'FtpsOnly'

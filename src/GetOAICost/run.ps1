@@ -7,11 +7,14 @@ if (!$Request.Query.ResourceId -or !$Request.Query.StartDate) {
 }
 else {
     $startTime = ([datetime]::parseexact($Request.Query.StartDate, 'yyyy-MM-dd', $null)).ToUniversalTime()
-    Write-Host "Getting cost for $($Request.Query.ResourceId) on $startTime"
-    $body = Get-Cost -ResourceId $Request.Query.ResourceId -StartTime $startTime 
+    $resourceId = $Request.Query.ResourceId
+    Write-Host "Getting cost for $resourceId on $startTime"
+    $body = Get-Cost -ResourceId $resourceId -StartTime $startTime
+
 }
 
 Push-OutputBinding -Name Response -Value ([HttpResponseContext]@{
         StatusCode = [HttpStatusCode]::OK
         Body       = $body
     })
+
