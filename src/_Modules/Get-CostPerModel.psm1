@@ -2,36 +2,61 @@ function Get-CostPerModel {
     param(
         [string] $Name,
         [string] $Model,
-        [int] $Total
+        [int]    $Total
     )
 
     if ($Total -eq 0) { return 0.0 } 
     else {
         $cost = 0.0
+        $metric = "TotalTokens"
 
         switch ($Model.ToLower()) {
             "gpt-35-turbo" { 
                 switch ($Name) {
-                    "GeneratedTokens" { $cost = 0.002 * $Total / 1000 }
-                    "ProcessedPromptTokens" { $cost = 0.0015 * $Total / 1000 }
+                    "GeneratedTokens" { 
+                        $cost = 0.002 * $Total / 1000 
+                        $metric = "Completion"
+                    }
+                    "ProcessedPromptTokens" { 
+                        $cost = 0.0015 * $Total / 1000 
+                        $metric = "Prompt"
+                    }
                 }
             }
             "gpt-35-turbo-16k" { 
                 switch ($Name) {
-                    "GeneratedTokens" { $cost = 0.004 * $Total / 1000 }
-                    "ProcessedPromptTokens" { $cost = 0.003 * $Total / 1000 }
+                    "GeneratedTokens" { 
+                        $cost = 0.004 * $Total / 1000 
+                        $metric = "Completion"
+                    }
+                    "ProcessedPromptTokens" { 
+                        $cost = 0.003 * $Total / 1000 
+                        $metric = "Prompt"
+                    }
                 }
             }
             "gpt-4" { 
                 switch ($Name) {
-                    "GeneratedTokens" { $cost = 0.06 * $Total / 1000 }
-                    "ProcessedPromptTokens" { $cost = 0.03 * $Total / 1000 }
+                    "GeneratedTokens" { 
+                        $cost = 0.06 * $Total / 1000 
+                        $metric = "Completion"
+                    }
+                    "ProcessedPromptTokens" { 
+                        $cost = 0.03 * $Total / 1000  
+                        $metric = "Prompt"
+                    }
                 }
             }
             "gpt-4-32k" { 
                 switch ($Name) {
-                    "GeneratedTokens" { $cost = 0.12 * $Total / 1000 }
-                    "ProcessedPromptTokens" { $cost = 0.06 * $Total / 1000 }
+                    "GeneratedTokens" { 
+                        $cost = 0.12 * $Total / 1000 
+                        $metric = "Completion"
+                    }
+                    "ProcessedPromptTokens" { 
+                        $cost = 0.06 * $Total / 1000 
+                        $metric = "Prompt"
+                    }
                 }
             }
             "dalle" { 
@@ -50,7 +75,10 @@ function Get-CostPerModel {
             }
         }    
         
-        return $cost
+        return [PSCustomObject]@{
+            Cost = $cost
+            Metric = $metric
+        }
     }
 }
 

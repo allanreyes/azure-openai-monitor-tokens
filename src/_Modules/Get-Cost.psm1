@@ -29,10 +29,26 @@ function Get-Cost {
         }
     }
 
-    $tokens | 
-    ForEach-Object { Get-CostPerModel -Name $_.Name -Model $_.Model -Total $_.Total } | 
-    Measure-Object -Sum | 
-    Select-Object -ExpandProperty Sum   
+    $total = 0.0
+    $components = @()
+
+    foreach($token in $tokens){
+        $line = Get-CostPerModel -Name $token.Name -Model $token.Model -Total $token.Total
+        if($line.Cost -gt 0){
+            $components += @{
+                Model = $token.Model
+                Tokens = $token.Total
+                Cost = $line.Cost
+                Metric = $line.Metric
+            }
+        }
+        $total += $line.Cost
+    }
+
+    [PSCustomObject]@{
+        TotalCost = $total
+        Components = $components | Sort-Object -Property Model, Metric
+    }
 }
 
 Export-ModuleMember -Function Get-Cost
