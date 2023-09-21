@@ -6,6 +6,9 @@ if ($Timer.IsPastDue) {
     Write-Host "PowerShell timer is running late!"
 }
 
+$threshold = [float]$env:MaxDailyCost
+Write-Host "Finding resources that exceed MaxDailyCost of $threshold"
+
 $query = @"
 resources 
 | where type contains 'microsoft.cognitiveservices' and kind == 'OpenAI'
@@ -21,14 +24,13 @@ $startTime = (Get-Date -AsUTC).AddDays(-1) # 24 hours ago
 Write-Host "Getting cost of each resource starting from $startTime (Last 24 UTC hours)"
 
 foreach ($resource in $resources) {
-    $line = Get-Cost -ResourceId $resource -StartDate $startTime
-    Write-Host "Resource: $resource"
-    
-    if ($line.TotalCost -gt $env:MaxDailyCost) {
-        Write-Host "Total cost: $($line.TotalCost) <<< Exceeds max cost of $($env:MaxDailyCost) >>>"
-
+    $line = Get-Cost -ResourceId $resource -StartTime $startTime
+    $name = $resource -Split "/" | Select-Object -Last 1
+    $log = "$name >>> $($line.TotalCost)"
+    if ($line.TotalCost -gt $threshold ) {
+        Write-Warning "$log <<< Exceeds max cost of $threshold"
     } else {
-        Write-Host "Total cost: $($line.TotalCost)"
+        Write-Host $log -ForegroundColor Green
     }
 }
 

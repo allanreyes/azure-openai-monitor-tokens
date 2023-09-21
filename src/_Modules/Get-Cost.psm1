@@ -1,17 +1,14 @@
 function Get-Cost {
     param(
         [string] $ResourceId,
-        [string] $StartDate
+        [datetime] $StartTime
     )
     
-    $startTime = ([datetime]::parseexact($StartDate, 'yyyy-MM-dd', $null)).ToUniversalTime()
-    $endTime = $startTime.AddDays(1)
-
-    Write-Host "Getting cost for $ResourceId on $StartDate"
+    $endTime = $StartTime.AddDays(1)
 
     $metrics = Get-AzMetric -MetricName TokenTransaction, ProcessedPromptTokens, GeneratedTokens  `
         -ResourceId $ResourceId `
-        -StartTime $startTime `
+        -StartTime $StartTime `
         -EndTime $endTime `
         -AggregationType Total `
         -TimeGrain 1.00:00:00 `
