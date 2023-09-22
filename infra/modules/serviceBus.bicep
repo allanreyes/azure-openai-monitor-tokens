@@ -21,5 +21,5 @@ resource serviceBusAccessPolicy 'Microsoft.ServiceBus/namespaces/authorizationRu
   name: 'RootManageSharedAccessKey'
 }
 
-var serviceBusAccessPolicyKey = serviceBusAccessPolicy.listKeys().primaryConnectionString
+var serviceBusAccessPolicyKey = serviceBusAccessPolicy.listKeys().primaryKey
 output serviceBusAccessPolicyKey string = serviceBusAccessPolicyKey
