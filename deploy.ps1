@@ -1,50 +1,49 @@
-### Use Windows PowerShell instead of PowerShell Core because of the AzureAD module dependency
+0### Use Windows PowerShell instead of PowerShell Core because of the AzureAD module dependency
 ### Uncomment these lines if you're not deploying using Azure Cloud Shell
 # Install-Module Az.Accounts -Scope CurrentUser -Force -AllowClobber
 # Install-Module Az.Resources -Scope CurrentUser -Force -AllowClobber
 # Connect-AzAccount
+# Get-AzContext
 # az login
 ###
 
-# Deploy Azure resources
-Write-Host "Which Azure location would you like to deploy to? (Default: canadaeast)" -ForegroundColor Yellow
-$location = Read-Host
-$location = [string]::IsNullOrEmpty($location) ? "canadaeast" : $location
+$target = Get-AzContext
+$subName = $target.Subscription.Name
+$subId = $target.Subscription.Id
+$deployment = @{}
+$params = @{}
 
-Write-Host "What suffix would you like to use for your resources? (Default: oaimonitor)" -ForegroundColor Yellow
-$suffix = Read-Host
-$suffix = [string]::IsNullOrEmpty($suffix) ? "oaimonitor" : $suffix
-
-Write-Host "What's the maximum number of tokens? (Default: 1000000)" -ForegroundColor Yellow
-$maxTokens = Read-Host
-$maxTokens = [string]::IsNullOrEmpty($maxTokens) ? "1000000" : $maxTokens
-
-Write-Host "Look back how many days? (Default: 30)" -ForegroundColor Yellow
-$daysAgo = Read-Host
-$daysAgo = [string]::IsNullOrEmpty($daysAgo) ? "30" : $daysAgo
-
-$loggedInUser = az account show --query user.name -o tsv
-Write-Host "What email address should the notification come from? (Default: $($loggedInUser))" -ForegroundColor Yellow
-$emailFrom = Read-Host
-$emailFrom = [string]::IsNullOrEmpty($emailFrom) ? $loggedInUser : $emailFrom
-
-Write-Host "What email address should the notification go to? (Default: $($loggedInUser))" -ForegroundColor Yellow
-$emailTo = Read-Host
-$emailTo = [string]::IsNullOrEmpty($emailTo) ? $loggedInUser : $emailTo
-
-$params = @{ 
-    suffix    = $suffix
-    maxTokens = $maxTokens
-    daysAgo   = $daysAgo
-    emailFrom = $emailFrom 
-    emailTo   = $emailTo
+# Key = prompt, default value, to be included in params
+$prompts = [PSCustomObject]@{
+    subscription = "Which subscription would you like to deploy to? Enter Subscription ID (Default: $subName)", "$subId", $false
+    location = "Which Azure location would you like to deploy to? (Default: canadaeast)", "canadaeast", $true
+    suffix = "What suffix would you like to use for your resources? (Default: oaimonitor)", "oaimonitor", $true 
+    maxDailyCost = "What's the daily budget for each Azure Open AI service? (Default: 100)", "100", $true 
+    organizationName = "What's the name of your Azure DevOps organization? (Default: Contoso)", "Contoso", $true
+    projectName = "What's the name of your Azure DevOps project? (Default: OpenAI Monitor)", "OpenAI Monitor", $true
+    buildDefinitionId = "What's the Build Definition Id of your Send Alert pipeline in Azure DevOps?", "999999999", $true
 }
 
+$prompts.PSObject.Properties | ForEach-Object {
+    Write-Host $_.Value[0] -ForegroundColor Yellow
+    $prompt = Read-Host
+    if([string]::IsNullOrEmpty($prompt)){ $prompt = $_.Value[1]}
+    if($_.Value[2]){ 
+        $params += @{ $_.Name = $prompt }
+    } else {
+        $deployment += @{ $_.Name = $prompt }
+    }
+}
+
+# Switch to correct subscription
+Set-AzContext $deployment.subscription | out-null
+az account set --subscription $deployment.subscription | out-null
+
 Write-Host "----------------------------------------"
-Write-Host "Deploying Azure resources..."
+Write-Host "Deploying Azure resources to resource group 'rg-$($params.suffix)' in subscription $($deployment.subscription) ... "
 
 $deployment = New-AzSubscriptionDeployment -Name "$($params.suffix)-deployment" `
-    -Location $location `
+    -Location $params.location `
     -TemplateFile ".\infra\main.bicep" `
     -TemplateParameterObject $params 
 
@@ -54,7 +53,30 @@ if ($deployment.ProvisioningState -ne "Succeeded") {
 }
 
 $functionAppName = $deployment.Outputs["appName"].Value
+# Giving it a few seconds to make sure the function app is ready
 
+Start-Sleep -Seconds 20
 Write-Host "Deploying function app code..."
-Set-Location -Path src
+Set-Location -Path 'src'
 func azure functionapp publish $functionAppName --powershell 
+Set-Location -Path '..\'
+
+Write-Host "----------------------------------------"
+
+$identity = $deployment.Outputs["functionAppIdentity"].Value
+$roleDef = Get-AzRoleDefinition "Reader"
+Write-Host "Granting Reader role to function app identity..."
+
+$mgs = Get-AzManagementGroup
+
+foreach ($mg in $mgs) {
+    Write-Host "Give the function app Reader role to the following management group: $($mg.DisplayName)? (y/n)" -ForegroundColor Yellow
+    $response = Read-Host
+    if($response.ToLower() -eq "y"){
+        New-AzRoleAssignment -ObjectId $identity `
+            -RoleDefinitionId $roleDef.Id `
+            -Scope $mg.Id
+    }
+}
+
+Write-Host "----------------------------------------"

@@ -26,9 +26,11 @@ function  Send-ServiceBusMessage() {
 
     # Duplicate detection is enabled with a window of 24 hours so notification is sent only once per day
     # Need to hash the resource ID to make it fit the 128 character limit of message Id    
+    $alertResetTime = (Get-Date -AsUTC).AddHours(3).ToString("yyyyMMdd")
+    $messageId = "$(Get-Hash -textToHash $ResourceId)-$($alertResetTime)"
     $headers = @{
         Authorization = $SASToken
-        BrokerProperties = @{ MessageId = $(Get-Hash -textToHash $ResourceId) } | ConvertTo-Json -Compress
+        BrokerProperties = @{ MessageId = $messageId } | ConvertTo-Json -Compress
     }
 
     Invoke-RestMethod -Method Post -Uri $uri -Body $ResourceId -Headers $headers -ContentType "application/json"

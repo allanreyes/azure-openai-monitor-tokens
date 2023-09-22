@@ -2,6 +2,7 @@ param appName string
 param location string = resourceGroup().location
 param saConnectionString string
 param aiConnectionString string
+param aiInstrumentationKey string
 param maxDailyCost string
 param serviceBusNamespace string
 param serviceBusAccessPolicyKey string
@@ -10,13 +11,10 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${appName}-asp'
   location: location
   sku: {
-    name: 'S1'
-    tier: 'Standard'
+    name: 'Y1'
+    tier: 'Dynamic'
   }
   kind: 'functionapp'
-  properties: {
-    zoneRedundant: false
-  }
 }
 
 resource functionApp 'Microsoft.Web/sites@2022-03-01' = {
@@ -43,6 +41,14 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
         value: saConnectionString
       }
       {
+        name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+        value: saConnectionString
+      }   
+      {
+        name: 'WEBSITE_CONTENTSHARE'
+        value: appName
+      }
+      {
         name: 'FUNCTIONS_EXTENSION_VERSION'
         value: '~4'
       }
@@ -53,6 +59,10 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: aiConnectionString
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: aiInstrumentationKey
       }
       {
         name: 'MaxDailyCost'
@@ -66,10 +76,13 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
         name: 'ServiceBusAccessPolicyKey'
         value: serviceBusAccessPolicyKey
       }
+      {
+        name: 'WEBSITE_RUN_FROM_PACKAGE'
+        value: '1'
+      }
     ]
     ftpsState: 'FtpsOnly'
     minTlsVersion: '1.2'
-    alwaysOn: true
     use32BitWorkerProcess: false
     cors: {
       allowedOrigins: [
@@ -78,3 +91,5 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
     }
   }
 }
+
+output functionAppIdentity string = functionApp.identity.principalId

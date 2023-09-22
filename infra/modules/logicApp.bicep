@@ -1,16 +1,31 @@
 param location string = resourceGroup().location
 param logicAppName string
-param emailFrom string
+param organizationName string
+param projectName string
+param buildDefinitionId string
 
-resource connectionsOffice365 'Microsoft.Web/connections@2016-06-01' = {
-  name: 'office365'
+resource connectionServicebus 'Microsoft.Web/connections@2016-06-01' = {
+  name: 'servicebus'
   location: location
   properties: {
-    displayName: emailFrom
+    displayName: 'Azure Service Bus'   
     api: {
-      name: 'office365'
-      displayName: 'Office 365 Outlook'
-       id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'office365')
+      name: 'servicebus'
+      displayName: 'Service Bus'
+      id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'servicebus')
+    }
+  }
+}
+
+resource connectionsAzureDevOps 'Microsoft.Web/connections@2016-06-01' = {
+  name: 'azureDevOps'
+  location: location
+  properties: {
+    displayName: 'Azure DevOps'
+    api: {
+      name: 'visualstudioteamservices'
+      displayName: 'Azure DevOps'
+      id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'visualstudioteamservices')
     }
   }
 }
@@ -30,57 +45,51 @@ resource workflows_la_credsalert_name_resource 'Microsoft.Logic/workflows@2019-0
         }
       }
       triggers: {
-        manual: {
-          type: 'Request'
-          kind: 'Http'
+        'When_one_or_more_messages_arrive_in_a_queue_(auto-complete)': {
+          recurrence: {
+            frequency: 'Second'
+            interval: 60
+          }
+          evaluatedRecurrence: {
+            frequency: 'Second'
+            interval: 60
+          }
+          splitOn: '@triggerBody()'
+          type: 'ApiConnection'
           inputs: {
-            schema: {
-              properties: {
-                Body: {
-                  type: 'string'
-                }
-                Subject: {
-                  type: 'string'
-                }
-                To: {
-                  type: 'string'
-                }
+            host: {
+              connection: {
+                name: '@parameters(\'$connections\')[\'servicebus\'][\'connectionId\']'
               }
-              type: 'object'
+            }
+            method: 'get'
+            path: '/@{encodeURIComponent(encodeURIComponent(\'alerts\'))}/messages/batch/head'
+            queries: {
+              maxMessageCount: 20
+              queueType: 'Main'
             }
           }
         }
       }
       actions: {
-        Response: {
-          runAfter: {
-            'Send_an_email_(V2)': [
-              'Succeeded'
-            ]
-          }
-          type: 'Response'
-          kind: 'Http'
-          inputs: {
-            statusCode: 200
-          }
-        }
-        'Send_an_email_(V2)': {
+        Queue_a_new_build: {
           runAfter: {}
           type: 'ApiConnection'
           inputs: {
             body: {
-              Body: '@triggerBody()?[\'Body\']'
-              Importance: 'Normal'
-              Subject: '@triggerBody()?[\'Subject\']'
-              To: '@triggerBody()?[\'To\']'
+              parameters: '{\n"resourceId": "@{decodeBase64(triggerBody()?[\'ContentData\'])}"\n}'
             }
             host: {
               connection: {
-                name: '@parameters(\'$connections\')[\'office365\'][\'connectionId\']'
+                name: '@parameters(\'$connections\')[\'visualstudioteamservices\'][\'connectionId\']'
               }
             }
             method: 'post'
-            path: '/v2/Mail'
+            path: '/@{encodeURIComponent(\'${projectName}\')}/_apis/build/builds'
+            queries: {
+              account: organizationName
+              buildDefId: buildDefinitionId
+            }
           }
         }
       }
@@ -89,15 +98,16 @@ resource workflows_la_credsalert_name_resource 'Microsoft.Logic/workflows@2019-0
     parameters: {
       '$connections': {
         value: {
-          office365: {
-            connectionId: connectionsOffice365.id
-            id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'office365')
+          servicebus: {
+            connectionId: connectionServicebus.id
+            id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'servicebus')
+          }
+          visualstudioteamservices: {
+            connectionId: connectionsAzureDevOps.id
+            id: subscriptionResourceId('Microsoft.Web/locations/managedApis', location, 'visualstudioteamservices')
           }
         }
       }
     }
   }
 }
-
-var logicAppUrl = listCallbackURL('${resourceId('Microsoft.Logic/workflows', logicAppName)}/triggers/manual', '2016-06-01').value
-output logicAppUrl string = logicAppUrl

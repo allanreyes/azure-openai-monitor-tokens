@@ -22,3 +22,4 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
 }
 
 output aiConnectionString string = appInsights.properties.ConnectionString
+output aiInstrumentationKey string = appInsights.properties.InstrumentationKey
