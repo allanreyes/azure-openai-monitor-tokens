@@ -20,8 +20,8 @@ $resources = (Search-AzGraph -Query $query -UseTenantScope) |
     Select-Object -ExpandProperty id
 Write-Host "Found $($resources.Count) resources to monitor"
 
-$startTime = (Get-Date -AsUTC).AddDays(-1) # 24 hours ago
-Write-Host "Getting cost of each resource starting from $startTime (Last 24 UTC hours)"
+$startTime = [datetime]::Today
+Write-Host "Getting cost of each resource starting from $startTime"
 
 foreach ($resource in $resources) {
     $line = Get-Cost -ResourceId $resource -StartTime $startTime
