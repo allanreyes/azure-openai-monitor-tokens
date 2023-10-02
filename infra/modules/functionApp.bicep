@@ -82,11 +82,7 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
       }
       {
         name: 'WEBSITE_TIME_ZONE'
-        value: 'Israel Daylight Time'
-      }
-      {
-        name: 'AzureWebJobs.MonitorOAICost.Disabled'
-        value: 'true'
+        value: 'Israel Standard Time'
       }
     ]
     ftpsState: 'FtpsOnly'
