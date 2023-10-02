@@ -43,7 +43,7 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
       {
         name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
         value: saConnectionString
-      }   
+      }
       {
         name: 'WEBSITE_CONTENTSHARE'
         value: appName
@@ -55,7 +55,7 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
       {
         name: 'FUNCTIONS_WORKER_RUNTIME'
         value: 'powershell'
-      }      
+      }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: aiConnectionString
@@ -79,6 +79,14 @@ resource functionAppConfig 'Microsoft.Web/sites/config@2022-03-01' = {
       {
         name: 'WEBSITE_RUN_FROM_PACKAGE'
         value: '1'
+      }
+      {
+        name: 'WEBSITE_TIME_ZONE'
+        value: 'Israel Daylight Time'
+      }
+      {
+        name: 'AzureWebJobs.MonitorOAICost.Disabled'
+        value: 'true'
       }
     ]
     ftpsState: 'FtpsOnly'

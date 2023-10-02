@@ -6,6 +6,8 @@
     "FUNCTIONS_WORKER_RUNTIME": "powershell",
     "MaxDailyCost": "0.5",
     "ServiceBusNamespace": "",
-    "ServiceBusAccessPolicyKey": ""
+    "ServiceBusAccessPolicyKey": "",
+    "WEBSITE_TIME_ZONE": "Israel Daylight Time",
+    "AzureWebJobs.MonitorOAICost.Disabled": true
   }
 }
