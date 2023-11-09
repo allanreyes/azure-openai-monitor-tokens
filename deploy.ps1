@@ -67,15 +67,38 @@ $identity = $deployment.Outputs["functionAppIdentity"].Value
 $roleDef = Get-AzRoleDefinition "Reader"
 Write-Host "Granting Reader role to function app identity..."
 
-$mgs = Get-AzManagementGroup
+Write-Host "Add reader role to individual subscriptions? (y/n)" -ForegroundColor Yellow
+$prompt = Read-Host
 
-foreach ($mg in $mgs) {
-    Write-Host "Give the function app Reader role to the following management group: $($mg.DisplayName)? (y/n)" -ForegroundColor Yellow
-    $response = Read-Host
-    if($response.ToLower() -eq "y"){
-        New-AzRoleAssignment -ObjectId $identity `
-            -RoleDefinitionId $roleDef.Id `
-            -Scope $mg.Id
+#Subscriptions
+if($prompt.ToLower() -eq "y"){
+
+    Write-Host "Enter a keyword that's part of the subscription name to filter results:" -ForegroundColor Yellow
+    $prompt = Read-Host
+    $subs = Get-AzSubscription -WarningAction:SilentlyContinue | Where-Object { $_.Name -like "*$prompt*" }
+    foreach ($sub in $subs) {
+        Write-Host "Give the function app Reader role to the following subscription: $($sub.Name)? (y/n)" -ForegroundColor Yellow
+        $response = Read-Host
+        if($response.ToLower() -eq "y"){
+            New-AzRoleAssignment -ObjectId $identity `
+                -RoleDefinitionId $roleDef.Id `
+                -Scope $sub.Id
+        }
+    }
+} else {
+#Management Groups
+    Write-Host "Enter a keyword that's part of the management group's name to filter results:" -ForegroundColor Yellow
+    $prompt = Read-Host
+    $mgs = Get-AzManagementGroup -WarningAction:SilentlyContinue | Where-Object { $_.Name -like "*$prompt*" }
+
+    foreach ($mg in $mgs) {
+        Write-Host "Give the function app Reader role to the following management group: $($mg.DisplayName)? (y/n)" -ForegroundColor Yellow
+        $response = Read-Host
+        if($response.ToLower() -eq "y"){
+            New-AzRoleAssignment -ObjectId $identity `
+                -RoleDefinitionId $roleDef.Id `
+                -Scope $mg.Id
+        }
     }
 }
 
